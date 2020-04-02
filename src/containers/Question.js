@@ -28,6 +28,8 @@ class Question extends Component {
 
 	async componentDidMount() {
 
+		console.log(this.props);
+
 		const { match } = this.props;
 
 		try {
@@ -52,6 +54,8 @@ class Question extends Component {
 
 
 	render() {
+
+		console.log(this.props);
 
 		const { data, loading, error } = this.state;
 

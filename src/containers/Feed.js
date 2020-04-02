@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import styled from 'styled-components';
 import Card from '../components/Card';
 import { Link } from 'react-router-dom';
+import queryString from 'query-string';
+import { PaginationBar, PaginationLink } from '../components/PaginationBar';
 
 const FeedWrapper = styled.div`
 	display: flex;
@@ -23,20 +25,41 @@ const ROOT_API = 'https://api.stackexchange.com/2.2/';
 
 class Feed extends Component {
 
-	constructor() {
-		super();
+	constructor(props) {
+		super(props);
+
+		const query = queryString.parse(props.location.search);
+
 		this.state = {
 			data: [],
+			page: (query.page) ? parseInt(query.page) : 1,
 			loading: true,
 			error: ''
 		};
 	}
 
-	async componentDidMount() {
+	componentDidMount() {
+
+		const { page } = this.state;
+
+		this.fetchAPI(page);		
+	} 
+
+	componentDidUpdate(prevProps) {
+
+		if (prevProps.location.search !== this.props.location.search) {
+			const query = queryString.parse(this.props.location.search);
+			this.setState({ page: parseInt(query.page) }, 
+				() => this.fetchAPI(this.state.page));
+		}
+	}
+
+	async fetchAPI(page) {
 
 		try {
 			const data = await fetch(
-				 `${ROOT_API}questions?order=desc&sort=activity&tagged=reactjs&site=stackoverflow`
+				 `${ROOT_API}questions?order=desc&sort=activity&tagged=reactjs&site=
+					stackoverflow${(page) ? `&page=${page}` : ''}`
 			);
 			const dataJSON = await data.json();
 
@@ -53,11 +76,13 @@ class Feed extends Component {
 				error: error.message
 			});
 		}
+
 	}
 
 	render() {
 
-		const { data, loading, error } = this.state;
+		const { data, page, loading, error } = this.state;
+		const { match } = this.props;
 
 		if (loading || error) {
 			return <Alert>{loading ? 'Loading...' : error}</Alert>;
@@ -73,6 +98,10 @@ class Feed extends Component {
 						</CardLink>)
 
 				}
+				<PaginationBar>
+					{ page > 1 && <PaginationLink to={`${match.url}?page=${page - 1}`}>Previous</PaginationLink> }
+					{ data.has_more && <PaginationLink to={`${match.url}?page=${page + 1}`}>Next</PaginationLink> }					
+				</PaginationBar>
 			</FeedWrapper>
 		);
 	}
